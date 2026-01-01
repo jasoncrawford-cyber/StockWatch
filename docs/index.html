@@ -1,0 +1,60 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>S&P 500 Daily Stock Signals</title>
+  <link rel="stylesheet" href="./assets/style.css"/>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>S&P 500 Daily Stock Signals</h1>
+      <div class="muted small">Updated (UTC): <span id="updated">loading…</span></div>
+    </div>
+    <nav class="small muted">
+      <a href="./about.html">About</a>
+    </nav>
+  </header>
+
+  <div class="card" style="margin-top:16px;">
+    <div class="controls">
+      <input id="q" placeholder="Search ticker or company…" />
+      <select id="sector">
+        <option value="ALL">All sectors</option>
+      </select>
+      <input id="minScore" type="number" step="0.1" value="0" min="0" max="100" />
+      <select id="sort">
+        <option value="score_desc">Sort: Score ↓</option>
+        <option value="score_asc">Sort: Score ↑</option>
+        <option value="ret20_desc">Sort: 20d return ↓</option>
+        <option value="ret60_desc">Sort: 60d return ↓</option>
+        <option value="news_desc">Sort: News score ↓</option>
+      </select>
+      <span class="muted small" id="count"></span>
+    </div>
+
+    <div id="error" class="muted small" style="margin-top:10px;"></div>
+
+    <hr/>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Score</th>
+          <th>Price</th>
+          <th>Highlights</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <footer>
+    Educational only — not financial advice. News score uses CNN/Fox headlines via GDELT filtered for market keywords.
+  </footer>
+
+  <script src="./assets/app.js"></script>
+</body>
+</html>
