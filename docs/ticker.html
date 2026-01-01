@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Ticker detail</title>
+  <link rel="stylesheet" href="./assets/style.css"/>
+</head>
+<body>
+  <header>
+    <div>
+      <h1 id="title">Ticker</h1>
+      <div class="muted small">Updated (UTC): <span id="updated">loading…</span></div>
+    </div>
+    <nav class="small muted">
+      <a href="./index.html">← Back</a> · <a href="./about.html">About</a>
+    </nav>
+  </header>
+
+  <div id="error" class="muted small" style="margin-top:16px;"></div>
+
+  <div id="content" class="card" style="margin-top:16px; display:none;">
+    <div class="muted small" id="meta"></div>
+
+    <div style="margin-top:10px;" id="pills"></div>
+
+    <hr/>
+
+    <h3 style="margin:0 0 8px 0;">Why it ranked here</h3>
+    <ul id="reasons"></ul>
+
+    <hr/>
+
+    <h3 style="margin:0 0 8px 0;">CNN/Fox market headlines (keyword-filtered)</h3>
+    <div class="muted small" id="headlineNote"></div>
+    <ul id="headlines"></ul>
+  </div>
+
+  <script>
+    function getParam(name) {
+      const u = new URL(window.location.href);
+      return u.searchParams.get(name);
+    }
+    function fmtPct(x) { return (x*100).toFixed(1) + "%"; }
+    function pill(text) {
+      const s = document.createElement("span");
+      s.className = "pill";
+      s.textContent = text;
+      return s;
+    }
+
+    async function main() {
+      const t = (getParam("t") || "").toUpperCase();
+      if (!t) {
+        document.querySelector("#error").textContent = "Missing ticker. Use ?t=MSFT";
+        return;
+      }
+
+      const res = await fetch("./data.json", { cache: "no-store" });
+      if (!res.ok) throw new Error("Failed to load data.json");
+      const data = await res.json();
+
+      document.querySelector("#updated").textContent = data.updated_utc || "(unknown)";
+
+      const row = (data.rows || []).find(r => (r.ticker || "").toUpperCase() === t);
+      if (!row) {
+        document.querySelector("#error").textContent = `Ticker not found in latest run: ${t}`;
+        return;
+      }
+
+      document.title = `${row.ticker} – Detail`;
+      document.querySelector("#title").textContent = `${row.ticker} – ${row.company}`;
+      document.querySelector("#meta").textContent = `${row.sector} · Price $${row.close.toFixed(2)} · Score ${row.score.toFixed(1)} (base ${row.base_score.toFixed(1)} + news ${row.news_score.toFixed(1)})`;
+
+      const pills = document.querySelector("#pills");
+      pills.appendChild(pill(`20d ${fmtPct(row.ret_20)}`));
+      pills.appendChild(pill(`60d ${fmtPct(row.ret_60)}`));
+      pills.appendChild(pill(`RSI ${row.rsi14.toFixed(1)}`));
+      pills.appendChild(pill(`Vol20 ${ (row.vol20*100).toFixed(2) }%`));
+      pills.appendChild(pill(`MA50 ${row.above_50 ? "above" : "below"}`));
+      pills.appendChild(pill(`MA200 ${row.above_200 ? "above" : "below"}`));
+      if (row.news_score !== 0) pills.appendChild(pill(`News ${row.news_score.toFixed(1)}`));
+
+      const reasons = document.querySelector("#reasons");
+      (row.reasons || []).forEach(x => {
+        const li = document.createElement("li");
+        li.textContent = x;
+        reasons.appendChild(li);
+      });
+
+      const headlines = document.querySelector("#headlines");
+      const hs = row.headlines || [];
+      document.querySelector("#headlineNote").textContent =
+        hs.length ? `${hs.length} headline(s) matched market keywords in the last few days.` : "No keyword-matching headlines found.";
+
+      hs.forEach(h => {
+        const li = document.createElement("li");
+        const hits = (h.keyword_hits || []).join(", ");
+        const sent = typeof h.sentiment === "number" ? h.sentiment.toFixed(2) : "";
+        li.innerHTML = `
+          <a href="${h.url}" target="_blank" rel="noreferrer">${h.title}</a>
+          <span class="muted small">(${h.domain} · ${h.seendate} · sent ${sent}${hits ? " · hits: " + hits : ""})</span>
+        `;
+        headlines.appendChild(li);
+      });
+
+      document.querySelector("#content").style.display = "block";
+    }
+
+    main().catch(err => {
+      console.error(err);
+      document.querySelector("#error").textContent = err.message;
+    });
+  </script>
+</body>
+</html>
